@@ -1,6 +1,12 @@
-import 'package:flutter/material.dart';
-// import 'package:fyp/Screens/login.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fyp/api_connection/model/user.dart';
+// import 'package:fyp/Screens/login.dart';
+import 'package:http/http.dart'as http;
+
+import '../api_connection/api_connection.dart';
 import 'login.dart';
 
 // ignore: camel_case_types
@@ -18,10 +24,67 @@ class _Sign_upState extends State<Sign_up> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  final TextEditingController email = TextEditingController();
-  final TextEditingController password = TextEditingController();
+  var  email = TextEditingController();
+  var  password = TextEditingController();
+  var name = TextEditingController();
+  validateUserEmail() async {
+    try{
+      var res = await http.post(Uri.parse(API.validateEmail),
+        body: {
+          "user_email":email.text.trim(),
+        }
+      );
+      if(res.statusCode==200){
+        var resbody = jsonDecode(res.body);
+        if(resbody['found']==true){
+          Fluttertoast.showToast(msg: "Email already in someone use..");
+
+        }else{
+          registered();
+
+        }
+      }
+
+    }
+    catch(e){
+      print(e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+  registered()async{
+    User userModel = User(
+      1,
+      name.text.trim(),
+      email.text.trim(),
+      password.text.trim(),
+
+    );
+    try{
+      var res = await http.post(Uri.parse(API.signup),
+        body:userModel.toJson(),
+      );
+      if(res.statusCode==200){
+        var resBody = jsonDecode(res.body);
+        if(resBody['sucess']==true){
+          Fluttertoast.showToast(msg: "SignUp sucessfully");
+        }else{
+          Fluttertoast.showToast(msg: "Eroor occurs try again");
+
+        }
+      }
+
+
+
+    }
+    catch(e){
+      print(e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+      
+    }
+  }
   @override
   void dispose() {
+
     // ✅ Dispose controllers to prevent memory leaks
     email.dispose();
     password.dispose();
@@ -67,9 +130,9 @@ class _Sign_upState extends State<Sign_up> {
                     child: Column(
                       children: [
                         TextFormField(
-                          controller: email,
+                          controller: name,
                           decoration: const InputDecoration(
-                            hintText: 'first Name',
+                            hintText: 'name',
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 16.0 * 1.5, vertical: 16.0),
                             border: OutlineInputBorder(
@@ -77,7 +140,7 @@ class _Sign_upState extends State<Sign_up> {
                                 borderRadius: BorderRadius.all(Radius.circular(16))
                             ),
                           ),
-                          keyboardType: TextInputType.phone,
+                          keyboardType: TextInputType.text,
                           onSaved: (phone) {
                             // Save it
                           },
@@ -85,10 +148,10 @@ class _Sign_upState extends State<Sign_up> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: TextFormField(
-                            controller: password,
-                            obscureText: true,
+                            controller: email,
+                            // obscureText: true,
                             decoration: const InputDecoration(
-                              hintText: 'Last Name',
+                              hintText: 'email',
                               contentPadding:EdgeInsets.symmetric(
                                   horizontal: 16.0 * 1.5, vertical: 16.0),
                               border: OutlineInputBorder(
@@ -120,29 +183,30 @@ class _Sign_upState extends State<Sign_up> {
                             },
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: TextFormField(
-                            controller: password,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              hintText: 'Confirm Password',
-                              contentPadding:EdgeInsets.symmetric(
-                                  horizontal: 16.0 * 1.5, vertical: 16.0),
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Color(0xff125AC2)),
-                                  borderRadius: BorderRadius.all(Radius.circular(16))
-                              ),
-                            ),
-                            onSaved: (passaword) {
-                              // Save it
-                            },
-                          ),
-                        ),
+                        // Padding(
+                        //   padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        //   child: TextFormField(
+                        //     controller: password,
+                        //     obscureText: true,
+                        //     decoration: const InputDecoration(
+                        //       hintText: 'Confirm Password',
+                        //       contentPadding:EdgeInsets.symmetric(
+                        //           horizontal: 16.0 * 1.5, vertical: 16.0),
+                        //       border: OutlineInputBorder(
+                        //           borderSide: BorderSide(color: Color(0xff125AC2)),
+                        //           borderRadius: BorderRadius.all(Radius.circular(16))
+                        //       ),
+                        //     ),
+                        //     onSaved: (passaword) {
+                        //       // Save it
+                        //     },
+                        //   ),
+                        // ),
                         ElevatedButton(
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
+                              validateUserEmail();
+                              // _formKey.currentState!.save();
                               // Navigate to the main screen
                               Navigator.push(context, MaterialPageRoute(builder: (context)=>login_screen()));
                             }

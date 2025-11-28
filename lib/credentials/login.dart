@@ -1,10 +1,22 @@
+import 'dart:convert';
+import 'package:get/get.dart';
+
+
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:fyp/Details/detail_2.dart';
 // import 'package:fyp/Screens/forgot/forgot.dart' show ForgotPassword;
 // import 'package:fyp/Screens/home/home.dart';
 // import 'package:fyp/Screens/signup.dart' show Sign_up;
 import 'package:fyp/credentials/singup.dart';
+import 'package:fyp/credentials/user_prefrence/userpre.dart';
 import 'package:fyp/forgot/forgot.dart';
 import 'package:fyp/main_screens/home.dart';
+import 'package:http/http.dart'as http;
+
+import '../api_connection/api_connection.dart';
+import '../api_connection/model/user.dart';
+
 
 // ignore: camel_case_types
 class login_screen extends StatefulWidget {
@@ -21,6 +33,40 @@ class _login_screenState extends State<login_screen> {
   // Controllers
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+  loginUser() async {
+    try {
+      var rez = await http.post(Uri.parse(API.login),
+
+          body: {
+            "user_email":email.text.trim(),
+            "user_password":password.text.trim(),
+          }
+      );
+      if(rez.statusCode==200){
+        var rezbody = jsonDecode(rez.body);
+        print("Login API status: ${rez.statusCode}");
+        print("Login API body: ${rez.body}");
+
+        if(rezbody['sucess']==true){
+          Fluttertoast.showToast(msg: "Login sucessfully");
+          User userInfo=User.fromJson(rezbody['User_data']);
+          await RemUSer.saveUSer(userInfo);
+          Future.delayed(Duration(microseconds: 200),(){
+            Get.to(home_screen());
+          });
+
+        }else{
+          Fluttertoast.showToast(msg: "An error occured no record found..");
+
+
+        }
+      }
+    }
+    catch(e){
+      print("error" +e.toString());
+    }
+
+  }
 
   @override
   void dispose() {
@@ -79,7 +125,7 @@ class _login_screenState extends State<login_screen> {
                         TextFormField(
                           controller: email,
                           decoration: const InputDecoration(
-                            hintText: 'Phone',
+                            hintText: 'Email',
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 24.0, vertical: 16.0),
                             border: OutlineInputBorder(
@@ -87,7 +133,7 @@ class _login_screenState extends State<login_screen> {
                                 borderRadius: BorderRadius.all(Radius.circular(16))
                             ),
                           ),
-                          keyboardType: TextInputType.phone,
+                          keyboardType: TextInputType.emailAddress,
                         ),
 
                         /// Password
@@ -111,13 +157,15 @@ class _login_screenState extends State<login_screen> {
                         /// Sign In Button
                         ElevatedButton(
                           onPressed: () {
+
                             if (_formKey.currentState!.validate()) {
-                              _formKey.currentState!.save();
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => home_screen()));
-                            }
+                              loginUser();
+                              // _formKey.currentState!.save();
+                            //   Navigator.push(
+                            //       context,
+                            //       MaterialPageRoute(
+                            //           builder: (context) => home_screen()));
+                             }
                           },
                           style: ElevatedButton.styleFrom(
                             elevation: 0,
@@ -213,3 +261,4 @@ class _login_screenState extends State<login_screen> {
     );
   }
 }
+
